@@ -14,12 +14,12 @@ String fName = "";
 PGraphics preview;
 ControlP5 cp5;
 Textlabel txtLab;
-Textfield txtFld;
+Textfield normFld, timeFld;
 
 
 
 public void setup(){
-    size(800, 450, P3D);
+    size(800, 450, P2D);
     noStroke();
     colorMode(HSB, 360, 100, 100);
     preview = createGraphics(displayWidth, 300);
@@ -45,26 +45,26 @@ public void setup(){
        .setSize(200,19)
        ;
        
-       
-    cp5.addSlider("timePeriod")
-       .setPosition(100,180)
-       .setSize(200,20)
-       .setRange(1,48)
-       .setNumberOfTickMarks(48)
+    timeFld = cp5.addTextfield("timePeriod")
+       .setText("48")
+       .setPosition(220,220)
+       .setSize(100,20)
+       .setAutoClear(false)
        ;
        
-    txtFld = cp5.addTextfield("norm")
-     .setText("280")
-     .setPosition(100,220)
-     .setSize(100,20)
-     .setAutoClear(false)
-     ;
+    normFld = cp5.addTextfield("norm")
+       .setText("280")
+       .setPosition(100,220)
+       .setSize(100,20)
+       .setAutoClear(false)
+       ;
 }
 
 public void draw(){
   background(0);
   //norm = int(cp5.get(Textfield.class,"norm").getText());
-  norm = int(txtFld.getText());
+  norm = int(normFld.getText());
+  timePeriod = int(timeFld.getText());
   
 }
 
@@ -85,7 +85,7 @@ void fileSelected(File selection) {
     println("User selected" + fPath);
     if (loadData(fPath)) {
       fName = selection.getName();
-      txtLab.setText("Data loaded: ");
+      txtLab.setText("Data loaded: " + fName);
     }
   }
 }
@@ -135,13 +135,41 @@ public void drawData(PGraphics output, IntList airData)
   }
 }
 
+public void drawData2(PGraphics output, IntList airData)
+{
+  
+  int i = 0;
+  output.noStroke();
+  output.colorMode(HSB, 360, 100, 100);
+  for(int probe: airData){
+    i++;
+    newY = i%timePeriod * (rectHeight + spacer);
+    if(i%timePeriod == 0){
+      newX = newX + rectWidth + spacer;
+    }
+    if (probe < 1){
+      rectColor = color(360, 0, 100);
+    } else if (probe > 1 && probe < norm){
+      rectColor = color(200, 50, map(probe, 1, norm, 100, 0));
+    } else if (probe > norm){
+      rectColor = color(360, 100, map(probe, 1, norm*3, 0, 100));
+    }
+    output.fill(rectColor);
+    output.rect(newX, newY, rectWidth, rectHeight);
+  }
+}
+
 public void loadFile(int theValue) {
    selectInput("Select a file to process:", "fileSelected");
 }
 
 public void generate(int theValue) {
    if (airData.size() > 0) {
+     newX = 0;
+     newY = 0;
+     spacer = 0;
      savePdf(airData);
+     println("done: " + fName);
    }
 }
 
@@ -150,7 +178,7 @@ public void savePdf(IntList airData){
   int pdfHeight = timePeriod * (rectHeight + spacer);
   PGraphics pdf = createGraphics(pdfWidth, pdfHeight, PDF, split(fName, '.')[0] + ".pdf");
   pdf.beginDraw();
-  drawData(pdf, airData);
+  drawData2(pdf, airData);
   pdf.dispose();
   pdf.endDraw();
 }
