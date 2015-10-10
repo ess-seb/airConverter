@@ -6,7 +6,7 @@ color colorHL = color(255, 204, 153);
 IntList airData = new IntList();
 int newX = 0, newY = 0, spacer = 0;
 int norm = 280, timePeriod = 48;
-int rectWidth = 5, rectHeight = 5;
+int rectWidth = 5, colHeight = 240;
 boolean isDrawn = false, isLoaded = false;
 color rectColor;
 String fPath = "";
@@ -49,14 +49,14 @@ public void setup(){
        .setText("48")
        .setPosition(220,220)
        .setSize(100,20)
-       .setAutoClear(false)
+       .setAutoClear(true)
        ;
        
     normFld = cp5.addTextfield("norm")
        .setText("280")
        .setPosition(100,220)
        .setSize(100,20)
-       .setAutoClear(false)
+       .setAutoClear(true)
        ;
 }
 
@@ -92,12 +92,13 @@ void fileSelected(File selection) {
 
 
 boolean loadData(String fPath){
+  airData.clear();
   String airFile[] = loadStrings(fPath);
     for(String fileRow: airFile){
       String[][] m = matchAll(fileRow, "(\\d+)");
       for(String[] rowDigits: m){
-        for(String probe: rowDigits){
-          airData.append(int(probe));
+        for(int i=1; i<rowDigits.length; i++){
+          airData.append(int(rowDigits[i]));
         }
       }
     }
@@ -105,35 +106,6 @@ boolean loadData(String fPath){
     return true;
 }
 
-public void drawData(PGraphics output, IntList airData)
-{
-  
-  int i = 0;
-  output.noStroke();
-  output.colorMode(HSB, 360, 100, 100);
-  for(int probe: airData){
-    i++;
-    newY = i%timePeriod * (rectHeight + spacer);
-    if(i%timePeriod == 0){
-      newX = newX + rectWidth + spacer;
-    }
-    //println(newX + " " + newY + " " + rectWidth + " " + rectHeight);
-    
-      if (probe < 1){
-      rectColor = color(0,0,100);
-      output.fill(rectColor);
-      output.rect(newX, newY, rectWidth, rectHeight);
-    } else if (probe > 1 && probe < norm){
-      rectColor = color(200,50,map(probe, 1, norm, 100, 0));
-      output.fill(rectColor);
-      output.rect(newX, newY, rectWidth, rectHeight);
-    } else if (probe > norm){
-      rectColor = color(360,100,map(probe, norm, 3*norm, 0, 100));
-      output.fill(rectColor);
-      output.rect(newX, newY, rectWidth, rectHeight);
-    }
-  }
-}
 
 public void drawData2(PGraphics output, IntList airData)
 {
@@ -141,12 +113,19 @@ public void drawData2(PGraphics output, IntList airData)
   int i = 0;
   output.noStroke();
   output.colorMode(HSB, 360, 100, 100);
+  int rectHeight = int(colHeight / timePeriod);
+  output.fill(0);
+  output.rect(0, 0, rectWidth, rectHeight);
   for(int probe: airData){
-    i++;
     newY = i%timePeriod * (rectHeight + spacer);
+    i++;
     if(i%timePeriod == 0){
-      newX = newX + rectWidth + spacer;
+      newX += rectWidth + spacer;
+      newY = 0;
     }
+    //print(newY + ", " + newX + "; ");
+    
+    
     if (probe < 1){
       rectColor = color(360, 0, 100);
     } else if (probe > 1 && probe < norm){
@@ -169,13 +148,13 @@ public void generate(int theValue) {
      newY = 0;
      spacer = 0;
      savePdf(airData);
-     println("done: " + fName);
+     println("\ndone: " + fName);
    }
 }
 
 public void savePdf(IntList airData){
-  int pdfWidth = int(airData.size()/timePeriod * (rectWidth + spacer));
-  int pdfHeight = timePeriod * (rectHeight + spacer);
+  int pdfWidth = ceil(airData.size()/timePeriod+1) * (rectWidth + spacer);
+  int pdfHeight = timePeriod * (colHeight / timePeriod + spacer)+20;
   PGraphics pdf = createGraphics(pdfWidth, pdfHeight, PDF, split(fName, '.')[0] + ".pdf");
   pdf.beginDraw();
   drawData2(pdf, airData);
